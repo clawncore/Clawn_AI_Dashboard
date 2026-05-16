@@ -41,6 +41,7 @@ const App = () => {
   // AI Settings State
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiModel, setAiModel] = useState('meta-llama/llama-3.1-8b-instruct');
+  const [openrouterKey, setOpenrouterKey] = useState(localStorage.getItem('openrouterKey') || '');
 
   const logEndRef = useRef(null);
 
@@ -50,7 +51,8 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem('backendUrl', backendUrl);
     localStorage.setItem('apiKey', apiKey);
-  }, [backendUrl, apiKey]);
+    localStorage.setItem('openrouterKey', openrouterKey);
+  }, [backendUrl, apiKey, openrouterKey]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -144,20 +146,20 @@ const App = () => {
       if (newState) {
         let credsId;
         try {
-          // 1. Register OpenAI/OpenRouter Credentials
+          // 1. Register OpenAI/OpenRouter Credentials — use a unique name per instance
           const creds = await apiCall('post', `/openai/creds/${cleanName}`, {
-            name: 'OpenRouter-Global',
-            apiKey: apiKey 
+            name: `OpenRouter-${cleanName}`,
+            apiKey: openrouterKey || apiKey
           });
           credsId = creds.id || (creds.response?.id);
         } catch (e) {
-          // If already registered, it's fine. Fetch the existing ones.
+          // Already registered — fetch existing credentials for this instance
           const existing = await axios.get(`${backendUrl}/openai/creds/${cleanName}`, { headers: { apikey: apiKey } });
-          const list = existing.data.response || existing.data;
-          credsId = list[0]?.id || (list.response?.[0]?.id);
+          const list = Array.isArray(existing.data) ? existing.data : (existing.data.response || []);
+          credsId = list[0]?.id;
         }
 
-        if (!credsId) throw new Error("Could not find registered credentials.");
+        if (!credsId) throw new Error("Could not find registered credentials. Make sure your OpenRouter API key is set.");
 
         // 2. Check for existing bots and update or create
         const bots = await apiCall('get', `/openai/find/${cleanName}`);
@@ -317,6 +319,16 @@ const App = () => {
                   </button>
                </div>
                <div className="space-y-4">
+                  <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-2xl group-hover:border-emerald-500/30 transition-all">
+                     <label className="text-[9px] font-black text-slate-500 uppercase block mb-2">OpenRouter API Key</label>
+                     <input
+                       type="password"
+                       value={openrouterKey}
+                       onChange={(e) => setOpenrouterKey(e.target.value)}
+                       className="w-full bg-transparent text-xs font-bold text-white outline-none placeholder:text-slate-600"
+                       placeholder="sk-or-v1-..."
+                     />
+                  </div>
                   <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-2xl group-hover:border-emerald-500/30 transition-all">
                      <label className="text-[9px] font-black text-slate-500 uppercase block mb-2">Neural Engine</label>
                      <select 
