@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  background-color: #0f172a;
+  background-color: #000000;
   color: #f8fafc;
 }
 
@@ -10,7 +10,7 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #0f172a;
+  background: #000000;
 }
 
 ::-webkit-scrollbar {
@@ -18,7 +18,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
