@@ -367,9 +367,21 @@ const App = () => {
 
     const interval = setInterval(() => {
       checkConnection(cleanName);
+      
+      // If we are on Step 3 (Pairing) and not yet connected, actively poll for a new QR code stream
+      if (currentStep === 3 && connState !== 'connected') {
+        apiCall('get', `/instance/connect/${cleanName}`)
+          .then((data) => {
+            const qrBase64 = data?.base64 || data?.qrcode?.base64;
+            if (qrBase64) {
+              setQrCode(qrBase64);
+            }
+          })
+          .catch(() => {});
+      }
     }, 5000);
     return () => clearInterval(interval);
-  }, [instanceName, backendUrl, apiKey]);
+  }, [instanceName, backendUrl, apiKey, currentStep, connState]);
 
   // Telemetry auto-advance on WhatsApp Scan & Automated n8n provisioning for each created bot instance
   useEffect(() => {
@@ -576,9 +588,14 @@ const App = () => {
       setProvisioningStatus('5. Streaming connection pairing card...');
       
       // 5. Fetch QR code
-      const data = await apiCall('get', `/instance/qrcode?instance=${cleanName}`);
-      if (data.code) {
-        setQrCode(data.code);
+      try {
+        const data = await apiCall('get', `/instance/connect/${cleanName}`);
+        const qrBase64 = data?.base64 || data?.qrcode?.base64;
+        if (qrBase64) {
+          setQrCode(qrBase64);
+        }
+      } catch (err) {
+        addLog('info', 'Connecting instance to retrieve initial QR stream...', err.message);
       }
 
       addLog('success', `🤖 Bot "${cleanName}" configured & ready for pairing!`);
